@@ -1,13 +1,9 @@
- # Check file sizes and reject any files too big
-            print_info "Maxiumum file size is ${MAXSIZE_mb}mb"
-            for file in $(git diff-tree --no-commit-id --name-only -r HEAD); do
-                # Check file size
-                size_bytes=$(git cat-file -s HEAD:"$file")
-                size_mb=$((size_bytes / 1000000))
-                print_info "${file}: file size is ${size_mb}mb"
-                if [ "$size_bytes" -gt "$MAXSIZE" ]
-                then 
-                    print_error "${file}: File size is too big to push, track with LFS"
-                    print_info "https://www.atlassian.com/git/tutorials/git-lfs"
-                    continue 
-                fi
+if [[ "$(uname -s)" = *"MINGW64_NT"* ]]
+then
+    INFO "Sorry cannot accept commits from Windows OS at this time"
+    ERROR 'Windows OS detected, cancelling commit'
+    
+    INFO "Sorry script cannot be used to test commits from Windows OS at this time"
+    WARNING 'Windows OS detected, skipping pre-commit checks'
+    #exit 0
+fi
