@@ -1,9 +1,0 @@
-if [[ "$(uname -s)" = *"MINGW64_NT"* ]]
-then
-    INFO "Sorry cannot accept commits from Windows OS at this time"
-    ERROR 'Windows OS detected, cancelling commit'
-    
-    INFO "Sorry script cannot be used to test commits from Windows OS at this time"
-    WARNING 'Windows OS detected, skipping pre-commit checks'
-    #exit 0
-fi
