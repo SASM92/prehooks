@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Reasoning behind strict bashing http://redsymbol.net/articles/unofficial-bash-strict-mode/
 
 set -euo pipefail
 readonly IFS=$'\n\t'
@@ -12,6 +11,8 @@ readonly ORANGE='\033[0;33m'
 readonly GREEN='\033[0;32m'
 readonly CYAN='\033[0;36m'
 readonly NC='\033[0m' # No-colour
+
+readonly NULLSHA="0000000000000000000000000000000000000000"
 
 # File size limits
 readonly MAXSIZE=2000000 # 2mb
@@ -34,19 +35,27 @@ function print_info(){
     echo -e "[ ${CYAN}INFO${NC} ] $1"
 }
 
-# Check file sizes and unstage any files too big
-print_info "Maxiumum file size is ${MAXSIZE_mb}mb"
-for file in $(git diff --cached --name-only --diff-filter=AM); do
-	# Check file size
-	size_bytes=$(wc -c <"$file")
-	size_mb=$((size_bytes / 1000000))
-	print_info "${file}: file size is ${size_mb}mb"
-	if [ "$size_bytes" -gt "$MAXSIZE" ]
-	then 
-		print_warning "${file}: File size is too big, unstaging file"
-		git reset HEAD "$file"
-		print_info "Track this file with LFS"
-		print_info "https://www.atlassian.com/git/tutorials/git-lfs"
-		continue 
-	fi
+# Read stdin for ref information
+while read oldref newref refname; do
+    print_info "Refs: $oldref $newref $refname"
+    
+    if [ "${newref}" = "${NULLSHA}" ]
+    then
+        oldref="HEAD"
+    fi
+
+    # Check file sizes and reject any files too big
+    print_info "Maxiumum file size is ${MAXSIZE_mb}mb"
+    for file in $(git diff --stat --name-only --diff-filter=AM ${oldref}...${newref}); do
+        # Check file size
+        size_bytes=$(git cat-file -s ${newref}:"${file}")
+        size_mb=$((size_bytes / 1000000))
+        print_info "${file}: file size is ${size_mb}mb"
+        if [ "$size_bytes" -gt "$MAXSIZE" ]
+        then 
+            print_error "${file}: File size is too big to push, track with LFS"
+            print_info "https://www.atlassian.com/git/tutorials/git-lfs"
+            continue 
+        fi
+            done
 done
